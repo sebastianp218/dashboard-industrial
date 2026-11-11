@@ -198,16 +198,16 @@ st.sidebar.metric(
 # PESTAÑAS DEL DASHBOARD
 # ======================================================
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
     [
         "🏭 Resumen general",
         "📦 Producción y calidad",
         "📈 Variables operativas",
         "⚠️ Fallas",
-        "💡 Hallazgos"
+        "💡 Hallazgos",
+        "📋 Datos"
     ]
 )
-
 
 # ======================================================
 # TAB 1 — RESUMEN GENERAL
@@ -790,4 +790,46 @@ with tab5:
 
     st.info(
         "Esta sección se completará después de analizar los resultados finales."
+    )
+# ======================================================
+# TAB 6 — DATOS
+# ======================================================
+
+with tab6:
+
+    st.header("📋 Datos de la planta")
+
+    st.markdown(
+        """
+        En esta sección se muestran los registros correspondientes
+        a los filtros seleccionados en el panel lateral.
+        """
+    )
+
+    # Cantidad de registros filtrados
+    st.metric(
+        "Registros mostrados",
+        f"{len(df_filtrado):,}"
+    )
+
+    # Tabla interactiva
+    st.dataframe(
+        df_filtrado,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    # ==================================================
+    # DESCARGA CSV
+    # ==================================================
+
+    csv = df_filtrado.to_csv(
+        index=False
+    ).encode("utf-8-sig")
+
+    st.download_button(
+        label="📥 Descargar datos filtrados en CSV",
+        data=csv,
+        file_name="datos_planta_filtrados.csv",
+        mime="text/csv"
     )
