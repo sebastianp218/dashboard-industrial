@@ -86,7 +86,7 @@ streamlit run app.py
 
 - Sebastián Pantoja
 - Juliana Castañeda
-- Gabriela Álvares
+- Gabriela Álvarez
 
 ## Aplicación publicada
 
