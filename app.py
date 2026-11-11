@@ -323,45 +323,461 @@ with tab1:
 
 with tab2:
 
-    st.header(
-        "📦 Producción y calidad"
+    st.header("📦 Producción y calidad")
+
+    # ==================================================
+    # PRODUCCIÓN POR LÍNEA
+    # ==================================================
+
+    st.subheader("Producción acumulada por línea")
+
+    produccion_linea = (
+        df_filtrado
+        .groupby("linea", as_index=False)["produccion"]
+        .sum()
     )
 
-    st.info(
-        "En el siguiente paso incorporaremos aquí las gráficas de producción y calidad."
+    fig_prod_linea = px.bar(
+        produccion_linea,
+        x="linea",
+        y="produccion",
+        title="Producción total por línea",
+        labels={
+            "linea": "Línea de producción",
+            "produccion": "Producción acumulada"
+        },
+        text_auto=True
+    )
+
+    st.plotly_chart(
+        fig_prod_linea,
+        use_container_width=True
     )
 
 
+    # ==================================================
+    # PRODUCCIÓN EN EL TIEMPO
+    # ==================================================
+
+    st.subheader("Evolución temporal de la producción")
+
+    produccion_tiempo = (
+        df_filtrado
+        .set_index("timestamp")
+        .resample("1D")["produccion"]
+        .sum()
+        .reset_index()
+    )
+
+    fig_prod_tiempo = px.line(
+        produccion_tiempo,
+        x="timestamp",
+        y="produccion",
+        markers=True,
+        title="Producción diaria",
+        labels={
+            "timestamp": "Fecha",
+            "produccion": "Producción"
+        }
+    )
+
+    st.plotly_chart(
+        fig_prod_tiempo,
+        use_container_width=True
+    )
+
+
+    # ==================================================
+    # PRODUCCIÓN POR TURNO
+    # ==================================================
+
+    st.subheader("Producción por turno")
+
+    produccion_turno = (
+        df_filtrado
+        .groupby("turno", as_index=False)["produccion"]
+        .sum()
+    )
+
+    fig_prod_turno = px.bar(
+        produccion_turno,
+        x="turno",
+        y="produccion",
+        title="Producción acumulada por turno",
+        labels={
+            "turno": "Turno",
+            "produccion": "Producción acumulada"
+        },
+        text_auto=True
+    )
+
+    st.plotly_chart(
+        fig_prod_turno,
+        use_container_width=True
+    )
+
+
+    st.markdown("---")
+
+    st.header("🔍 Análisis de calidad")
+
+
+    # ==================================================
+    # DEFECTOS POR LÍNEA
+    # ==================================================
+
+    st.subheader("Defectos por línea")
+
+    defectos_linea = (
+        df_filtrado
+        .groupby("linea", as_index=False)["defectos"]
+        .sum()
+    )
+
+    fig_def_linea = px.bar(
+        defectos_linea,
+        x="linea",
+        y="defectos",
+        title="Defectos acumulados por línea",
+        labels={
+            "linea": "Línea de producción",
+            "defectos": "Defectos"
+        },
+        text_auto=True
+    )
+
+    st.plotly_chart(
+        fig_def_linea,
+        use_container_width=True
+    )
+
+
+    # ==================================================
+    # PORCENTAJE DE DEFECTOS POR LÍNEA
+    # ==================================================
+
+    st.subheader("Porcentaje de defectos por línea")
+
+    calidad_linea = (
+        df_filtrado
+        .groupby("linea")
+        .agg(
+            produccion_total=("produccion", "sum"),
+            defectos_totales=("defectos", "sum")
+        )
+        .reset_index()
+    )
+
+    calidad_linea["porcentaje_defectos"] = (
+        calidad_linea["defectos_totales"]
+        / calidad_linea["produccion_total"]
+        * 100
+    )
+
+    fig_porcentaje_def = px.bar(
+        calidad_linea,
+        x="linea",
+        y="porcentaje_defectos",
+        title="Porcentaje de defectos por línea",
+        labels={
+            "linea": "Línea de producción",
+            "porcentaje_defectos": "Defectos (%)"
+        },
+        text_auto=".2f"
+    )
+
+    st.plotly_chart(
+        fig_porcentaje_def,
+        use_container_width=True
+    )
+
+
+    # ==================================================
+    # DEFECTOS POR TURNO
+    # ==================================================
+
+    st.subheader("Defectos por turno")
+
+    defectos_turno = (
+        df_filtrado
+        .groupby("turno", as_index=False)["defectos"]
+        .sum()
+    )
+
+    fig_def_turno = px.bar(
+        defectos_turno,
+        x="turno",
+        y="defectos",
+        title="Defectos acumulados por turno",
+        labels={
+            "turno": "Turno",
+            "defectos": "Defectos"
+        },
+        text_auto=True
+    )
+
+    st.plotly_chart(
+        fig_def_turno,
+        use_container_width=True
+    )
 # ======================================================
 # TAB 3 — VARIABLES OPERATIVAS
 # ======================================================
 
 with tab3:
 
-    st.header(
-        "📈 Variables operativas"
+    st.header("📈 Variables operativas")
+
+    st.markdown(
+        """
+        Las gráficas presentan promedios horarios para facilitar
+        la identificación de tendencias y variaciones operativas.
+        """
     )
 
-    st.info(
-        "Aquí incorporaremos temperatura, vibración y presión."
+
+    # ==================================================
+    # AGREGACIÓN TEMPORAL
+    # ==================================================
+
+    operativas = (
+        df_filtrado
+        .set_index("timestamp")
+        [["temperatura", "vibracion", "presion"]]
+        .resample("1h")
+        .mean()
+        .reset_index()
     )
 
 
+    # ==================================================
+    # TEMPERATURA
+    # ==================================================
+
+    st.subheader("🌡️ Temperatura")
+
+    fig_temp = px.line(
+        operativas,
+        x="timestamp",
+        y="temperatura",
+        title="Evolución temporal de la temperatura",
+        labels={
+            "timestamp": "Fecha y hora",
+            "temperatura": "Temperatura"
+        }
+    )
+
+    st.plotly_chart(
+        fig_temp,
+        use_container_width=True
+    )
+
+
+    # ==================================================
+    # VIBRACIÓN
+    # ==================================================
+
+    st.subheader("〰️ Vibración")
+
+    fig_vib = px.line(
+        operativas,
+        x="timestamp",
+        y="vibracion",
+        title="Evolución temporal de la vibración",
+        labels={
+            "timestamp": "Fecha y hora",
+            "vibracion": "Vibración"
+        }
+    )
+
+    st.plotly_chart(
+        fig_vib,
+        use_container_width=True
+    )
+
+
+    # ==================================================
+    # PRESIÓN
+    # ==================================================
+
+    st.subheader("🔵 Presión")
+
+    fig_pres = px.line(
+        operativas,
+        x="timestamp",
+        y="presion",
+        title="Evolución temporal de la presión",
+        labels={
+            "timestamp": "Fecha y hora",
+            "presion": "Presión"
+        }
+    )
+
+    st.plotly_chart(
+        fig_pres,
+        use_container_width=True
+    )
 # ======================================================
 # TAB 4 — FALLAS
 # ======================================================
 
 with tab4:
 
-    st.header(
-        "⚠️ Análisis de fallas"
+    st.header("⚠️ Análisis de fallas")
+
+
+    # ==================================================
+    # FALLAS POR LÍNEA
+    # ==================================================
+
+    st.subheader("Registros con falla por línea")
+
+    fallas_linea = (
+        df_filtrado
+        .groupby("linea", as_index=False)["falla"]
+        .sum()
+        .rename(
+            columns={
+                "falla": "registros_con_falla"
+            }
+        )
     )
 
-    st.info(
-        "Aquí incorporaremos el análisis de fallas desarrollado anteriormente."
+    fig_fallas_linea = px.bar(
+        fallas_linea,
+        x="linea",
+        y="registros_con_falla",
+        title="Cantidad de registros con falla por línea",
+        labels={
+            "linea": "Línea de producción",
+            "registros_con_falla": "Registros con falla"
+        },
+        text_auto=True
+    )
+
+    st.plotly_chart(
+        fig_fallas_linea,
+        use_container_width=True
     )
 
 
+    # ==================================================
+    # EVOLUCIÓN TEMPORAL DE LAS FALLAS
+    # ==================================================
+
+    st.subheader("Evolución temporal de las fallas")
+
+    fallas_tiempo = (
+        df_filtrado
+        .set_index("timestamp")
+        .resample("1D")["falla"]
+        .sum()
+        .reset_index()
+    )
+
+    fig_fallas_tiempo = px.line(
+        fallas_tiempo,
+        x="timestamp",
+        y="falla",
+        markers=True,
+        title="Registros con falla por día",
+        labels={
+            "timestamp": "Fecha",
+            "falla": "Registros con falla"
+        }
+    )
+
+    st.plotly_chart(
+        fig_fallas_tiempo,
+        use_container_width=True
+    )
+
+
+    # ==================================================
+    # PORCENTAJE DE FALLA POR LÍNEA
+    # ==================================================
+
+    st.subheader(
+        "Porcentaje de registros con falla por línea"
+    )
+
+    porcentaje_fallas_linea = (
+        df_filtrado
+        .groupby("linea")
+        .agg(
+            registros_totales=("falla", "count"),
+            registros_con_falla=("falla", "sum")
+        )
+        .reset_index()
+    )
+
+    porcentaje_fallas_linea["porcentaje_falla"] = (
+        porcentaje_fallas_linea["registros_con_falla"]
+        / porcentaje_fallas_linea["registros_totales"]
+        * 100
+    )
+
+    fig_porcentaje_fallas = px.bar(
+        porcentaje_fallas_linea,
+        x="linea",
+        y="porcentaje_falla",
+        title="Porcentaje de registros con falla por línea",
+        labels={
+            "linea": "Línea de producción",
+            "porcentaje_falla": "Registros con falla (%)"
+        },
+        text_auto=".2f"
+    )
+
+    st.plotly_chart(
+        fig_porcentaje_fallas,
+        use_container_width=True
+    )
+
+
+    # ==================================================
+    # RELACIÓN ENTRE VIBRACIÓN Y FALLAS
+    # ==================================================
+
+    st.subheader(
+        "Relación entre vibración y registros de falla"
+    )
+
+    df_fallas = df_filtrado.copy()
+
+    df_fallas["estado_falla"] = (
+        df_fallas["falla"]
+        .map({
+            0: "Sin falla",
+            1: "Con falla"
+        })
+    )
+
+    fig_vibracion_falla = px.box(
+        df_fallas,
+        x="estado_falla",
+        y="vibracion",
+        points="outliers",
+        title="Distribución de vibración según el estado de falla",
+        labels={
+            "estado_falla": "Estado",
+            "vibracion": "Vibración"
+        }
+    )
+
+    st.plotly_chart(
+        fig_vibracion_falla,
+        use_container_width=True
+    )
+
+
+    st.caption(
+        """
+        La gráfica permite explorar asociaciones entre los
+        niveles de vibración y los registros de falla.
+        Una asociación visual no implica necesariamente causalidad.
+        """
+    )
 # ======================================================
 # TAB 5 — HALLAZGOS
 # ======================================================
