@@ -784,12 +784,202 @@ with tab4:
 
 with tab5:
 
-    st.header(
-        "💡 Hallazgos y recomendaciones"
+    st.header("💡 Hallazgos y recomendaciones")
+
+    st.markdown(
+        """
+        Los siguientes hallazgos se calculan a partir de los
+        datos correspondientes a los filtros seleccionados.
+        """
     )
 
-    st.info(
-        "Esta sección se completará después de analizar los resultados finales."
+    # ==================================================
+    # 1. HALLAZGO DE PRODUCCIÓN
+    # ==================================================
+
+    produccion_por_linea = (
+        df_filtrado
+        .groupby("linea")["produccion"]
+        .sum()
+        .sort_values(ascending=False)
+    )
+
+    linea_mayor_produccion = produccion_por_linea.index[0]
+    mayor_produccion = produccion_por_linea.iloc[0]
+
+    produccion_total_h = produccion_por_linea.sum()
+
+    participacion_produccion = (
+        mayor_produccion
+        / produccion_total_h
+        * 100
+    )
+
+
+    # ==================================================
+    # 2. HALLAZGO DE CALIDAD
+    # ==================================================
+
+    calidad = (
+        df_filtrado
+        .groupby("linea")
+        .agg(
+            produccion=("produccion", "sum"),
+            defectos=("defectos", "sum")
+        )
+    )
+
+    calidad["porcentaje_defectos"] = (
+        calidad["defectos"]
+        / calidad["produccion"]
+        * 100
+    )
+
+    linea_mayor_defectos = (
+        calidad["porcentaje_defectos"]
+        .idxmax()
+    )
+
+    mayor_porcentaje_defectos = (
+        calidad
+        .loc[
+            linea_mayor_defectos,
+            "porcentaje_defectos"
+        ]
+    )
+
+
+    # ==================================================
+    # 3. HALLAZGO DE FALLAS
+    # ==================================================
+
+    fallas = (
+        df_filtrado
+        .groupby("linea")
+        .agg(
+            registros=("falla", "count"),
+            fallas=("falla", "sum")
+        )
+    )
+
+    fallas["porcentaje_falla"] = (
+        fallas["fallas"]
+        / fallas["registros"]
+        * 100
+    )
+
+    linea_mayor_falla = (
+        fallas["porcentaje_falla"]
+        .idxmax()
+    )
+
+    mayor_porcentaje_falla = (
+        fallas
+        .loc[
+            linea_mayor_falla,
+            "porcentaje_falla"
+        ]
+    )
+    # ==================================================
+    # RELACIÓN VIBRACIÓN - FALLA
+    # ==================================================
+
+    vibracion_falla = (
+        df_filtrado
+        .groupby("falla")["vibracion"]
+        .median()
+    )
+
+    if 0 in vibracion_falla.index and 1 in vibracion_falla.index:
+
+        vibracion_sin_falla = vibracion_falla.loc[0]
+        vibracion_con_falla = vibracion_falla.loc[1]
+
+        diferencia_vibracion = (
+            vibracion_con_falla
+            - vibracion_sin_falla
+        )
+
+
+    # ==================================================
+    # MOSTRAR HALLAZGOS
+    # ==================================================
+
+    st.subheader("🔎 Principales hallazgos")
+
+    st.success(
+        f"""
+        **Hallazgo 1 — Producción:**  
+        La {linea_mayor_produccion} presenta la mayor producción
+        acumulada en el periodo seleccionado, con
+        {mayor_produccion:,.0f} unidades, equivalentes al
+        {participacion_produccion:.2f}% de la producción analizada.
+        """
+    )
+
+    st.warning(
+        f"""
+        **Hallazgo 2 — Calidad:**  
+        La {linea_mayor_defectos} presenta el mayor porcentaje de
+        defectos, con una tasa de
+        {mayor_porcentaje_defectos:.2f}% respecto a su producción.
+        """
+    )
+
+    st.error(
+        f"""
+        **Hallazgo 3 — Fallas:**  
+        La {linea_mayor_falla} presenta el mayor porcentaje de
+        registros con falla, con
+        {mayor_porcentaje_falla:.2f}% de sus registros asociados
+        a una falla.
+        """
+    )
+
+
+    # ==================================================
+    # ANÁLISIS COMPLEMENTARIO
+    # ==================================================
+
+    if 0 in vibracion_falla.index and 1 in vibracion_falla.index:
+
+        st.info(
+            f"""
+            **Análisis complementario:**  
+            La mediana de vibración en registros sin falla es
+            {vibracion_sin_falla:.2f}, mientras que en los registros
+            con falla es {vibracion_con_falla:.2f}.
+            La diferencia observada es de
+            {diferencia_vibracion:.2f}.
+            """
+        )
+    # ==================================================
+    # RECOMENDACIONES
+    # ==================================================
+
+    st.subheader("🛠️ Recomendaciones")
+
+    st.markdown(
+        f"""
+        **1. Analizar las prácticas de la {linea_mayor_produccion}.**  
+        Evaluar los factores operativos asociados con su mayor nivel
+        de producción y determinar cuáles prácticas podrían utilizarse
+        como referencia para las demás líneas, verificando previamente
+        que no impliquen deterioro en calidad o confiabilidad.
+
+        **2. Priorizar acciones de mejora de calidad en la
+        {linea_mayor_defectos}.**  
+        Analizar las causas asociadas con su mayor porcentaje de
+        defectos, considerando variables operativas, turno y condiciones
+        del proceso para identificar oportunidades de reducción de
+        reprocesos y desperdicios.
+
+        **3. Reforzar el seguimiento de la {linea_mayor_falla}.**  
+        Debido a que presenta el mayor porcentaje de registros con
+        falla, se recomienda fortalecer el monitoreo de variables como
+        vibración, temperatura y presión y evaluar acciones de
+        mantenimiento preventivo o predictivo.
+        """
     )
 # ======================================================
 # TAB 6 — DATOS
